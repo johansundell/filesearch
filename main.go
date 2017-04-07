@@ -1,55 +1,76 @@
+// Copyright 2012 The Go Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
+
+// +build windows
+
+// Example service program that beeps.
+//
+// The program demonstrates how to create Windows service and
+// install / remove it on a computer. It also shows how to
+// stop / start / pause / continue any service, and how to
+// write to event log. It also shows how to use debug
+// facilities available in debug package.
+//
 package main
 
 import (
 	"fmt"
 	"log"
-	"net/http"
-	"path/filepath"
+	"os"
+	"strings"
+
+	"golang.org/x/sys/windows/svc"
 )
 
-func main() {
-
-	http.HandleFunc("/", Myhandler)
-	http.ListenAndServe(":8080", nil)
+func usage(errmsg string) {
+	fmt.Fprintf(os.Stderr,
+		"%s\n\n"+
+			"usage: %s <command>\n"+
+			"       where <command> is one of\n"+
+			"       install, remove, debug, start, stop, pause or continue.\n",
+		errmsg, os.Args[0])
+	os.Exit(2)
 }
 
-func Myhandler(w http.ResponseWriter, r *http.Request) {
-	r.ParseForm()
-	tmp := r.Form["pattern"]
-	pattern := ""
-	if len(tmp) > 0 {
-		pattern = tmp[0]
+func OLDmain() {
+	const svcName = "filesearch"
+
+	isIntSess, err := svc.IsAnInteractiveSession()
+	if err != nil {
+		log.Fatalf("failed to determine if we are running in an interactive session: %v", err)
 	}
-	if pattern == "" {
-		w.WriteHeader(http.StatusNotFound)
+	if !isIntSess {
+		runService(svcName, false)
 		return
 	}
 
-	files, err := findMatches("/home/johan/downloads/", pattern)
-	if err != nil {
-		log.Println(err)
+	if len(os.Args) < 2 {
+		usage("no command specified")
 	}
-	fmt.Println(files)
 
-	fmt.Fprintf(w, "ok")
-}
-
-func findMatches(path, pattern string) ([]string, error) {
-	/*filepath.Walk("/home/johan/downloads/", func(path string, info os.FileInfo, err error) error {
-		if err != nil {
-			return err
-		}
-
-		if !info.IsDir() && info.Mode().IsRegular() {
-			parts := strings.FieldsFunc(path, func(c rune) bool { return os.PathSeparator == c })
-			file := parts[len(parts)-1]
-			if strings.Contains(file, ".go") && strings.Contains(file, "main") {
-				fmt.Println(path)
-			}
-		}
-		return nil
-	})*/
-
-	files, err := filepath.Glob(path + pattern)
-	return files, err
+	cmd := strings.ToLower(os.Args[1])
+	switch cmd {
+	case "debug":
+		runService(svcName, true)
+		return
+	case "install":
+		err = installService(svcName, "filesearch")
+	case "remove":
+		err = removeService(svcName)
+	case "start":
+		err = startService(svcName)
+	case "stop":
+		err = controlService(svcName, svc.Stop, svc.Stopped)
+	case "pause":
+		err = controlService(svcName, svc.Pause, svc.Paused)
+	case "continue":
+		err = controlService(svcName, svc.Continue, svc.Running)
+	default:
+		usage(fmt.Sprintf("invalid command %s", cmd))
+	}
+	if err != nil {
+		log.Fatalf("failed to %s %s: %v", cmd, svcName, err)
+	}
+	return
 }
