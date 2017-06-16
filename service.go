@@ -31,7 +31,7 @@ func (m *myservice) Execute(args []string, r <-chan svc.ChangeRequest, changes c
 	router = NewRouter()
 	srv := &http.Server{
 		Handler: router,
-		Addr:    ":8081",
+		Addr:    ":8082",
 		// Good practice: enforce timeouts for servers you create!
 		WriteTimeout: 90 * time.Second,
 		ReadTimeout:  90 * time.Second,

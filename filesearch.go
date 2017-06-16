@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
-	"time"
 
 	"github.com/gorilla/mux"
 )
@@ -34,7 +33,7 @@ func init() {
 	//path = `\\10.103.165.20\341510Common$\OX2 Vindel\Kundservices\CST-Dokument\`
 }
 
-func main() {
+/*func main() {
 	//findTest(pathScanner, "2929")
 	//return
 	router = NewRouter()
@@ -46,7 +45,7 @@ func main() {
 		ReadTimeout:  90 * time.Second,
 	}
 	log.Fatal(srv.ListenAndServe())
-}
+}*/
 
 func ScannerHandler(w http.ResponseWriter, r *http.Request) {
 

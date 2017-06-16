@@ -33,7 +33,7 @@ func usage(errmsg string) {
 	os.Exit(2)
 }
 
-func OLDmain() {
+func main() {
 	const svcName = "filesearch"
 
 	isIntSess, err := svc.IsAnInteractiveSession()
